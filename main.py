@@ -5,8 +5,20 @@ from griptape.structures import Pipeline
 from griptape.tasks import PromptTask, ImageGenerationTask
 from griptape.drivers import OpenAiDalleImageGenerationDriver
 from griptape.engines import ImageGenerationEngine
+from attr import define, field
+from griptape.artifacts import TextArtifact
+from griptape.tasks import BaseTextInputTask
+from typing import Callable
 
 load_dotenv()  # Load your environment
+
+
+@define
+class PythonTask(BaseTextInputTask):
+    run_fn: Callable = field(kw_only=True)
+
+    def run(self) -> TextArtifact:
+        return self.run_fn()
 
 # Variables
 output_dir = "./images"
@@ -23,6 +35,10 @@ image_engine = ImageGenerationEngine(image_generation_driver=image_driver)
 pipeline = Pipeline()
 
 # Create tasks
+python_task = PythonTask(
+                run_fn= lambda python_task: print("This Python task ran")
+            )
+
 create_prompt_task = PromptTask(
     """
     Create a prompt for an Image Generation pipeline for the following topic: 
@@ -50,7 +66,7 @@ display_image_task = PromptTask(
 )
 
 # Add tasks to pipeline
-pipeline.add_tasks(create_prompt_task, generate_image_task, display_image_task)
+pipeline.add_tasks(python_task, create_prompt_task, generate_image_task, display_image_task)
 
 # Run the pipeline
 pipeline.run("a cow")
